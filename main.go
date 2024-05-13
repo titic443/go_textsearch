@@ -21,10 +21,54 @@ func main() {
 		Password:  "changeme",
 		CACert:    crt,
 	}
-	es, _ := elasticsearch.NewClient(cfg)
-	es.Info()
 
-	app.Get("/search/:value", func(c *fiber.Ctx) error {
+	index := "connections_textsearch_2024.05.131"
+	es, _ := elasticsearch.NewClient(cfg)
+
+	q := `{
+		"size": 20,
+		"query": {
+		  "bool": {
+			"must": [
+			  {
+				"span_near": {
+				  "clauses": [
+					{
+					  "span_multi": {
+						"match": {
+						  "fuzzy": {
+							"name": {
+							  "value": "khaoosan",
+							  "fuzziness": "AUTO"
+							}
+						  }
+						}
+					  }
+					},
+					{
+					  "span_multi": {
+						"match": {
+						  "fuzzy": {
+							"name": {
+							  "value": "rodad",
+							  "fuzziness": "AUTO"
+							}
+						  }
+						}
+					  }
+					}
+				  ],
+				  "slop": 0,
+				  "in_order": false
+				}
+			  }
+			]
+		  }
+		}
+	  }`
+	// es.Search(es.Search.WithIndex(index), es.Search.WithBody(strings.NewReader(q)))
+	res, err := es.Search().
+		app.Get("/search/:value", func(c *fiber.Ctx) error {
 		q := c.Params("value")
 		tokens := strings.Split(q, "%20")
 		fmt.Println(tokens)
